@@ -5,6 +5,7 @@
 *.log
 *.fls
 *_latexmk
+*.blg
 
 .DS_Store
 
