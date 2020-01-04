@@ -1,0 +1,71 @@
+\documentclass[12p]{article}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{natbib}
+\usepackage{outlines}
+\usepackage[
+  top=1.5cm,
+  bottom=1.5cm,
+  left=2.5cm,
+  right=2.5cm,
+  headheight=17pt, % as per the warning by fancyhdr
+  includehead,includefoot,
+  heightrounded, % to avoid spurious underfull messages
+]{geometry}
+\pagestyle{fancy}
+\fancyhf{}
+\cfoot{\emph{Mendenhall 18-10: Page \thepage}}
+\lhead{\emph{Mendenhall Opportunity 18-10 Budget}}
+\rhead{\emph{William Savran, Ph.D.}}
+\titleformat*{\section}{\large\bfseries}
+\titleformat*{\subsection}{\itshape}
+\usepackage[utf8]{inputenc} % set input encoding to utf8
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+
+%% Set some local commands and colors
+\usepackage{colortbl}
+\definecolor{green}{rgb}{0.1,0.1,0.1}
+%\color{green!40!yellow})
+
+\newcommand{\done}{\cellcolor{teal}done}  %{0.9}
+\newcommand{\hcyan}[1]{{\color{teal} #1}}
+
+\begin{document}
+\section*{Research Budget}
+
+The research budget for this proposal totals \$19,219.95. The funds will be allocated towards personal computing, travel expenses to conferences, and publication fees. The budget is computed for the duration of the postdoctoral fellowship. The data and GPU computing resources are available for no cost from the NEIC.
+
+\vspace{.5cm}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Expense}                                 & \textbf{Price}       & \textbf{Quantity}      & \textbf{Total} \\
+\midrule
+\textsc{Computing and Software}       & & & \$6,969.95 \\
+\midrule
+\emph{MacBook Pro}               &      \$4,000.00        & 1           &  \\
+\emph{Peripherals}               &      \$2,000.00        & 1           &  \\
+\emph{EndNote X9}                &      \$249.95         & 1           &  \\
+\emph{Adobe Illustrator}         &      \$260.00         & 2           &  \\
+\emph{Microsoft Office}          &      \$100.00         & 2           &  \\
+\midrule
+\textsc{Publication Fees}            & & & \$4,500.00 \\
+\midrule
+\emph{Article Fees}              &      \$1,500.00        & 3           &  \\
+\midrule
+\textsc{Conferences}               &  &  & \$7,750.00 \\
+\midrule
+\emph{Seismological Society of America} & & & \\
+~~~Registration               &  \$550.00             & 2           &  \\
+~~~Travel and Accommodation   &  \$1500.00            & 2           &  \\
+\emph{IEEE/CVF Conference on Computer Vision} & & & \\
+~~~Registration               &  \$650.00             & 1           &  \\
+~~~Travel and Accommodation   &  \$1500.00            & 1           &  \\
+\emph{Miscellaneous Workshop} & & & \\
+~~~Registration and Accommodation & \$1,500.00          & 1           &  \\
+\midrule
+\textbf{\textsc{Total}} & & & \$19,219.95
+\end{tabular}
+    \end{document}

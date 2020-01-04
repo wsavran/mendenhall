@@ -4,6 +4,7 @@
 \usepackage{titlesec}
 \usepackage{natbib}
 \usepackage{outlines}
+\usepackage[utf8]{inputenc}
 \usepackage[
   top=1.5cm,
   bottom=1.5cm,
@@ -237,11 +238,16 @@ previously supported nodes for triggering nucleation, increasing computational e
 associations.
 
 The outputs from GLASS3 using classification constraints must be compared against the unconstrained case with the goal
-of quantifying the improvements of the association problem. I propose to follow a similar approach as \citet{Yeck2019}
+of quantifying the improvements to the association problem. I propose to follow a similar approach as \citet{Yeck2019}
 to compare GLASS3 with constrained GLASS3 preliminary hypocenters. Initial metrics for comparison will be the spatial
 locations of the detected events from constrained and unconstrained GLASS3 solutions and the relative percents of PDE
-events detected as a function of the pick metadata. Another important metric will be the amount of events recovered from
-the PDE bulletin.
+events detected as a function of the pick metadata. Comparisons between associators can be an imperfect task, because
+there is no ground truth to the data \citep{Yeck2019}. This effect is mitigated, to some degree, as we are comparing
+GLASS3 against itself and not another associator. Because constraining the association helps us limit the number of
+nodes that are able to nucleate and associate, we can potentially incorporate higher resolutions in the global
+association web with little added computational cost. We can evaluate the performance of the constrained GLASS3
+locations by the refined locations from teleseismic inversions \citep{Hayes2009, Ekstrom2012} on moderately sized
+earthquakes to ensure hypocenter locations are consistent with centroid locations. By quantifying the improvement over currently implemented methods, we can gain confidence in the algorithms' ability to be incorporated into routine processing of association.
 
 \subsection{Earthquake Detectors based on Deep Learning}
 
@@ -263,12 +269,56 @@ when smaller signals are detected as earthquakes. A similar verification will be
 compare unconstrained GLASS3 with STA/LTA picks with unconstrained GLASS3 with CNN picks, and (2) compare the
 constrained GLASS3 outputs with STA/LTA picks and constrained GLASS3 outputs with CNN picks following \citet{Yeck2019}.
 It will be interesting to determine the changes in magnitude of completeness and detection threshold when using CNNs for
-both picking and constraining association. We anticipate that the best association performance (and global catalog
+both picking and constraining association. We expect the best association performance (and global catalog
 quality) comes from using a CNN picker and constraining GLASS3. Therefore, introducing a CNN picker and classification
 framework for the association problem has the potential to drastically improve current global monitoring capabilities at
 the NEIC.
 
 \section{Inferring Magnitudes and Source Types from Single Station Records}
+
+Using data labels readily available in the PDE bulletin, I propose to explore the feasibility of machine learning
+algorithms to (1) rapidly characterize earthquake magnitudes ($m_b$) and (2) source types from single station records.
+Much of the network architecture, data aggregation and processing developed in the previous section will be directly
+transferable here making this a natural extension of the previous work. Thus, I anticipate to use the same network
+architecture and data set but trained to classify the appropriate labels (e.g., $m_b$ or source type). The goal of this
+application is to produce rapid estimate of magnitude from a single station without a predetermined hypocenter location.
+This application of deep learning for rapid magnitude determination has direct implications for earthquake early warning.
+
+\subsection{Data and Network Architecture}
+Much like making inferences about the azimuth, depth, and distance based on an observation at a single station we can
+train a neural network to infer the magnitude or source type from a single station record. There are two ways we can
+approach the magnitude problem. First, we can treat the magnitude as a continuous value and configure a regression
+problem, which requires a minor modification to the previously proposed architecture of the neural network. Secondly, we
+can treat it as a classification problem using discrete magnitude bins. We will generate data sets containing both
+labels to explore both approaches. An additional consideration for the magnitude estimate is whether to use the event
+magnitude or the magnitude based on the seismometer recording. For early warning applications, it makes the most sense
+to estimate the event magnitude using stations closest to the hypocenter. This way the magnitude determination is
+fastest and the signal will be least impacted by attenuation and path effects. Generating the data set for classifying
+source type is straight-forward in that we are going to use three labels (1) earthquake, (2) explosion, (3) unknown and
+ensure that the training data set is equally distributed between the labels.
+
+\subsection{Inferring Body-wave Magnitude}
+Body wave magnitudes are computed based on the maximum amplitude of the first 5 seconds of short period P-waves at a
+station and term correcting for distance and depth from the source \citep{Gutenberg1945, Scordillis2006}. Therefore, a
+hypocenter determination must be made in order to properly compute the correction term. It will be important to
+understand the predictions of the model as a function of reported magnitude. We can compare this by making bias plots
+and quantifying both the bias and scatter between magnitude scales. Also, it is well known that magnitude distributions
+follow a power law distribution as a function of size, therefore our data set will skewed towards lower magnitudes. This
+effect is important for magnitude estimation as the amplitude of the seismic signal is likely the primary feature
+controlling the magnitude estimate, and we have the least observations for the most damaging earthquakes. In addition to
+inferring magnitudes of larger events, we should assess the ability of the CNN to determine the magnitude of smaller
+events as this has important implications for earthquake forecasting and seismic hazard where smaller magnitude
+earthquakes are used to forecast the locations of larger earthquakes yet to occur \citep{Werner2011}. This approach
+likely has better applications to regional and local networks where first arriving phases are recorded in denser
+networks.
+
+\subsection{Inferring Source Type}
+We can treat the source type inference as a simple classification problem where we define the labels: earthquake,
+explosion, and unknown. We hypothesize that the onset of energy from an earthquake will differ from that of an explosive
+source \cite{Evernden1969, Douglas2002}, therefore we anticipate that the CNN will be able to capture the features
+necessary to distinguish between source types in this simple classification study. For this case, we will use waveform
+data and records processed into spectrograms following \citet{Zhu2019b} as the frequency content of the arriving waves
+should be different for tectonic and explosive sources \citep{Evernden1969}. It will be interesting to understand under what conditions the model fails to make predictions as this would indicate some ambiguity between the explosive and tectonic signals. We can investigate this by plotting the failed, and successful, predictions in the context of other features of the seismic energy for example, depth, distance, and magnitude.
 
 \section{Summary and Future Impacts}
 This proposal contains both research and operational components focused on incorporating machine-learning algorithms to
@@ -318,16 +368,33 @@ The proposed work is motivated by the USGS Science Strategy \citep{Holmes2013} a
 
 \section{Candidate Experience}
 
-During my PhD in the joint-doctoral program between San Diego State and Scripps Institution of Oceanography (SIO),
+My PhD in the joint-doctoral program between San Diego State and Scripps Institution of Oceanography (SIO) focused
+largely on improving our capability to generate high frequency ($\sim$10 Hz) strong-ground motion synthetics. The work
+utilized stochastic models to account for the small-scale variability in both the source and media allowing for
+wave-field simulations consistent with observations \citep{Savran2016, Savran2019}. This work provided me with a strong
+foundation for working with large data sets on high-performance computing systems (>10 terabytes).
+
+My current work as a Research Programmer at the Southern California Earthquake Center (SCEC) focuses on developing
+validation metrics for earthquake forecasts that produce synthetic earthquake catalogs and implementing them into a
+toolbox to share with the community (in development). This work is done as part of the international collaboration
+called the \emph{Collaboratory for the Study of Earthquake Predictability} \citep{Jordan2006, Schorlemmer2007b}. The
+computational and statistical background I developed, along with helpful research advisors, allowed me to make
+contributions to this project that will be used to evaluate operational forecasts in the European RISE project for
+dynamic seismic hazard assessment. These methods will be published in the BSSA Ridgecrest special issue
+\citep{Savran2020}. To support research outreach, I mentored undergraduate interns at SCEC focusing on machine learning where we worked with the software tools (e.g., TensorFlow) necessary to implement deep learning algorithms.
+
+Working on earthquake forecasting has made me particularly keen on catalog quality and the operational response to large
+earthquakes. I am strongly interested in the applications of machine-learning and contributing to the operational
+capabilities of the NEIC. Both my PhD work and my current role at SCEC puts me in a uniquely qualified position to
+achieve both the operational and research aspects of this proposal - largely in part to my research experience and
+strong computing abilities. In order to achieve the work outlined here, I will build upon previously published work in
+the field and leverage the experience of the research advisors of this Mendenhall opportunity.
 
 \section{Required Scientific Facilities}
 The proposed work requires access to facilities with GPU accelerated computing to train the deep neural-networks.
 \citet{Ross2018b} required three NVIDIA GTX1060 graphics cards for their training needs. Both the USGS Yeti
 Supercomputing cluster and the USGS Tallgrass cluster provide GPU computing that should be sufficient to complete the
-proposed work.
-
-\section{Research Budget}
-
+proposed work. Additionally, the NEIC has an in-house server containing two Tesla V100 GPUs.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
