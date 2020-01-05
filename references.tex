@@ -1,0 +1,24 @@
+\documentclass[12p]{article}
+\usepackage{natbib}
+\usepackage{times}
+\usepackage{fancyhdr}
+\usepackage[
+  top=1.5cm,
+  bottom=1.5cm,
+  left=2.5cm,
+  right=2.5cm,
+  headheight=17pt, % as per the warning by fancyhdr
+  includehead,includefoot,
+  heightrounded, % to avoid spurious underfull messages
+]{geometry}
+\pagestyle{fancy}
+\fancyhf{}
+\cfoot{\emph{Mendenhall 18-10: Page \thepage}}
+\lhead{\emph{Mendenhall Opportunity 18-10 References}}
+\rhead{\emph{William Savran, Ph.D.}}
+
+
+\begin{document}
+\bibliographystyle{apalike}
+\input{proposal.bbl}     %% watch out for the same name
+\end{document}

@@ -1,10 +1,12 @@
 \documentclass[12p]{article}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
+\usepackage{times}
 \usepackage{titlesec}
 \usepackage{natbib}
 \usepackage{outlines}
 \usepackage[utf8]{inputenc}
+\usepackage{atbegshi}
 \usepackage[
   top=1.5cm,
   bottom=1.5cm,
@@ -21,28 +23,32 @@
 \rhead{\emph{William Savran, Ph.D.}}
 \titleformat*{\section}{\large\bfseries}
 \titleformat*{\subsection}{\itshape}
+\def\bibfont{\small}
 \begin{document}
 
 \begin{center}\Large\textbf{Leveraging Machine Learning for Next-Generation Global Earthquake Monitoring}\end{center}
 
 \section{Overview}
+
 For earthquakes occurring globally, the United States Geological Survey (USGS) National Earthquake Information Center
 (NEIC) provides a continuous service to determine earthquake source properties, and to share this information with
-national and international agencies, researchers, and the public. Before source characteristics can be computed and
-disseminated, earthquakes must be detected on a seismic network. Through a process, known as association, their
-hypocenters are rapidly determined. Following successful association, a suite of products are computed to characterize
-the earthquake source. Earthquake origin times, hypocenters, and source characteristics (e.g., magnitudes, moment
-tensors, and finite-fault models) are compiled into canonical catalogs of recorded earthquakes. These catalogs
-represent the fundamental data seismologists use to study earthquake processes. Therefore, improving seismic catalogs
-is critical to advancing our understanding of earthquakes and seismic hazard.
+national and international agencies, researchers, and the public with an emphasis on timeliness and accuracy. Once an
+earthquake is detected on a seismic network, its hypocenter is rapidly determined through a process known as
+association. Following successful association, a suite of products are computed to characterize the earthquake source.
+Earthquake origin times, hypocenters, and source characteristics (e.g., magnitudes, moment tensors, and finite-fault
+models) are then compiled into canonical catalogs of recorded earthquakes. These catalogs represent the fundamental data
+seismologists use to study earthquake processes.
 
-This proposal deals primarily with implementing and understanding limitations of deep learning algorithms as applied to
-earthquake detection, association, and source characterization with the goal of improving the global catalog by
-decreasing the magnitude threshold and improving completeness. As such, I propose to build a framework leveraging machine learning to:
+This proposal deals primarily with investigating machine learning algorithms as applied to earthquake detection,
+association, and rapid source characterization with the goal of improving the global catalog by decreasing the magnitude
+threshold and improving completeness. Recent studies have demonstrated that machine learning algorithms applied to event
+processing and classifying seismic signals using individual station records can potentially surpass the accuracy of
+human analysts, generalize well to new data, and are computationally efficient \citep{Perol2018, Ross2018a, Ross2018b,
+Zhu2019a, Zhu2019b, Mousavi2019}. As such, I propose to leverage machine learning to:
 
 \begin{enumerate}\bfseries
-  \item Implement algorithms to detect earthquakes and classify source characteristics, toward a better global catalog
-  and
+  \item Improve earthquake detection and association algorithms and classify source characteristics, toward a better
+  global catalog, and
   \item Quantify the improvements from machine learning algorithms on earthquake detection and association, as compared
   with previous methods, and
   \item Introduce new machine learning approaches to the routine processing of global and regional seismic data at the
@@ -54,20 +60,19 @@ foreshock activity, that can be used to signify impending earthquakes. To date s
 systematic precursory phenomena, although they have been noted for individual earthquakes (e.g., \cite{Kanamori1981,
 Shearer2009, Kato2012, Bouchon2013, Brodsky2014, Panet2018}). However, laboratory experiments that generate so-called
 labquakes suggest that precursory signals similar to foreshocks are observed in most cases \citep{Goebel2013,
-RouetLeduc2017, Bolton2019}. Additionally,  This suggests that these precursory events preceding stick-slip failure
-could be observed on natural faults given a catalog with high enough resolution. Recent work by \citet{Trugman2019}
-confirmed this hypothesis by showing pervasive foreshock activity for Southern California earthquakes. Due to a dearth
-of recordings from significant domestic earthquakes, studying global seismicity allows us to investigate these
-hypotheses for many more significant events and across various tectonic regimes. Therefore, understanding the behavior
-of large earthquakes globally has the potential to positively impact domestic activities such as operational earthquake
-forecasting, earthquake early warning, and future versions of the National Seismic Hazard Map.
+RouetLeduc2017, Bolton2019}. This suggests that precursory signals might be observed in nature given a catalog with high
+enough resolution. Recent work by \citet{Trugman2019} confirmed this hypothesis by showing pervasive foreshock activity
+for Southern California earthquakes using a high resolution catalog. Due to a dearth of recordings from significant
+domestic earthquakes, studying global seismicity allows us to investigate hypotheses for many more significant events
+and across various tectonic regimes. Thus, understanding the behavior of large earthquakes globally has the potential to
+positively impact domestic activities such as operational earthquake forecasting, earthquake early warning, and future
+versions of the National Seismic Hazard Map.
 
-The proposed work contains both a research and operational component that has the capacity to influence routine
-operations at the NEIC. The research aspect deals with developing novel applications of machine learning algorithms to
-better classify seismic signals as soon as they are recorded. The operational component focuses on implementing these
-algorithms in the context of routine seismic data processing at the NEIC. Recent studies show deep learning algorithms
-being used effectively for earthquake detection and for classifying seismic signals using individual station records
-\citep{Perol2018, Ross2018a, Ross2018b, Zhu2019a, Zhu2019b, Mousavi2019}.
+The proposed work contains both a research and operational component that can revolutionize earthquake monitoring at the
+NEIC. The research aspect deals with developing novel applications of machine learning algorithms to better characterize
+seismic signals as soon as they are recorded. The operational component focuses on implementing and understanding the
+limitations of these algorithms in the context of routine seismic data processing at the NEIC to improve earthquake
+response products.
 
 This proposal is motivated by the NEIC Strategic Plan, (2019-23, Circular 1457; \cite{Hayes2019sp}) specifically to
 ``finalize improvements to its regional monitoring capabilities, including the implementation of a variety of improved
@@ -79,26 +84,24 @@ Michelle Guy, Harley Benz, and Zachary Ross.
 \section{Background Information}
 \subsection{Earthquake Monitoring: Detection and Association}
 
-The NEIC receives continuous seismic data from over 2000 stations globally (Fig. \ref{fig:stations}). Earthquake
-monitoring involves using seismic signals observed at multiple stations to determine hypocenters and determine
+Earthquake monitoring involves using seismic signals observed at multiple stations to determine hypocenters and other
 characteristics of an earthquake source. This process must occur autonomously and produce results that are reliable and
 timely per the USGS's responsibility to ``provide timely information to other agencies, emergency managers, the media,
-and the public about hazardous events as they occur" \citep{Holmes2013}. The NEIC
-utilizes a data processing pipeline that transforms raw seismic data, recorded globally, into both fully
-automated and semi-automated data products, such as, earthquake hypocenters, magnitudes, moment
-tensors, fault slip models, potential loss and damage information, and aftershock forecasts (e.g., \citet{Thompson2019, Michael2019}). At the core of this process, an association algorithm determines the most probable hypocenter
-location of a seismic event using arrival time picks from individual stations and an assumed velocity
-model. The performance of an association depends largely on the ability to detect and characterize
-seismic signals from individual stations \citep{Yeck2019}.
+and the public about hazardous events as they occur" \citep{Holmes2013}. The NEIC utilizes a data processing pipeline
+that transforms raw seismic data, recorded globally from over 2000 stations (Fig. \ref{fig:stations}), into both fully
+automated and semi-automated response products (e.g., \citet{Thompson2019, Michael2019}). At the core of this process,
+an association algorithm determines the most probable hypocenter of a seismic event using arrival time picks
+from individual stations and an assumed velocity model. The performance of an association depends largely on the ability
+to detect and characterize seismic signals from individual stations \citep{Yeck2019}.
 
 The NEIC uses Hydra \citep{Patton2016} to manage the processing pipeline from earthquake detection through source
-characterization and analyst intervention using graphical user interfaces. Hydra uses a detection algorithm known as
-the Hydra Picker which implements the classic short-term average (STA) / long-term average (LTA) \citep{Lee1981}
+characterization including analyst intervention using graphical user interfaces. Hydra uses a detection algorithm known
+as the Hydra Picker which implements the classic short-term average (STA) / long-term average (LTA) \citep{Lee1981}
 technique to detect picks in continuous seismic data. The major drawbacks of STA/LTA are the inability to distinguish
-between source types including phases and other characteristics of the source, and the sensitivity of the outputs to
-the tuning parameters \citep{Patton2016}. In other words, picks from STA/LTA algorithms have ambiguous phase and
-provide no constraints on possible source location aside from arrival times. Improvements made to detection algorithms
-enhance our ability to detect smaller earthquakes, and is therefore a critical step in lower catalog completeness.
+between source types including phases and other characteristics of the source, and the sensitivity of the outputs to the
+tuning parameters \citep{Patton2016}. In other words, picks from STA/LTA algorithms have ambiguous phase and provide no
+constraints on possible source location aside from arrival times. Improvements made to detection algorithms enhance our
+ability to detect smaller earthquakes, and is therefore a critical step to lowering catalog completeness.
 
 Phase ambiguous picks made by the Hydra Picker can be processed by the Global Associator 3 (GLASS3; \citet{Yeck2019})
 algorithm, which provides a solution to the association problem across global, regional, and local scale networks.
@@ -111,7 +114,7 @@ hypocenter or nucleate the pick to generate a new trial hypocenter. Since associ
 nucleation and association can be improved by providing additional information with a pick to help constrain the
 potential source location in space. By knowing a priori the depth, back azimuth and source-distance, we can limit the
 nodes where picks can associate and nucleate. Thus, providing additional constraints to the association algorithm is an
-obvious step to reducing failed associations and improving earthquake detection capabilities across the network.
+obvious step to reducing failed associations and lowering the detection threshold.
 
 \begin{figure}[!htb]
   \center\includegraphics[width=0.8\textwidth]{figures/global_station_coverage.png}
@@ -119,112 +122,117 @@ obvious step to reducing failed associations and improving earthquake detection 
   time data to the NEIC (shown using white triangles).}
 \end{figure}
 
-Once a successful association has been made, the preliminary origin time and hypocenter of the earthquake are
-subsequently fed, as initial guesses, into a suite of algorithms used to invert observed seismic waves for estimations
-of moment magnitudes, $M_w$, and source models \citep{Kanamori2008, Hayes2009, Duputel2012, Ekstrom2012, Melgar2015,
-Hayes2017}. These algorithms are the most reliable sources of magnitude information for earthquakes, but can only be
-computed for moderate to large earthquakes (i.e., $M_w$ > 5.0). Moment-tensor inversions utilize teleseismic waves
-making them available tens of minutes after an earthquake \citep{Hayes2009, Ekstrom2012}. Until moment-tensor solutions
-are available, body-wave magnitude estimates, $m_b$, are the best available magnitude solution. Estimates of $m_b$ are
-based on maximum amplitudes of first arriving body-waves. Therefore, it is conceivable that more reliable early
-magnitude estimations could be made by considering the entire waveform within some finite window.
+Once a successful association has been made, the preliminary origin time and hypocenter can be fed as initial guesses,
+into a suite of algorithms used to invert observed seismic waves for estimations of moment magnitudes, $M_w$, and
+finite-fault models \citep{Kanamori2008, Hayes2009, Duputel2012, Ekstrom2012, Hayes2017}. These algorithms produce the
+most reliable sources of magnitude information for earthquakes, but can only be computed for moderate to large
+earthquakes (i.e., $M_w$ $>$5.0). Moment-tensor inversions utilize teleseismic waves making them available tens of
+minutes after an earthquake \citep{Hayes2009, Ekstrom2012}. Until inverted magnitude solutions are available, body-wave
+magnitude estimates, $m_b$, are the best available magnitude solution. The $m_b$ is based on maximum amplitudes of first
+arriving body-waves. Therefore, I hypothesize that more reliable and timely early magnitude estimations can be made by
+considering the early arriving waveform as opposed to the maximum amplitude.
 
 \subsection{Deep Neural Networks for Earthquake Detection and Source Characterization}
 
-Within the last few years advancements in the field of machine-learning have drastically improved our ability to make
+Within the last few years advancements in the field of machine learning have drastically improved our ability to make
 inferences from data, especially for tasks that previously required a human brain \citep{Lecun2015}. In general,
-machine-learning algorithms approximate a function that provides a mapping from input to output values. Fully connected
+machine learning algorithms approximate a function that provides a mapping from input to output values. Fully connected
 neural-networks (FCNNs) consist of fully connected layers of neurons whose architecture depends on the the problem being
 solved and the dimensionality of the input and output values. The first layer of an FCNN accepts `features' of the data
 and the final layer contains the desired outputs or labels \citep{Rojas1996}. Using ground-motion prediction equations
 as an example, features are source-receiver distances and magnitudes while outputs are peak ground metrics or spectral
 accelerations. Furthermore, there can be an arbitrary number of `hidden' layers between the input and output layers. The
-performance of FCNNs depends on the choices of the features extracted from the data, which are typically engineered
-manually and can be difficult to constrain. NNs with large numbers of layers (and therefore parameters) are referred to
+performance of an FCNN depends on the choices of the features extracted from the data, which are typically engineered
+manually and difficult to constrain. NNs with large numbers of layers (and therefore parameters) are referred to
 as deep networks.
 
 Convolutional neural networks (CNNs) have the ability to automatically learn features by performing a series of
 convolution and pooling (downsampling) operations to distill raw input data into a concise feature vector (Fig.
-\ref{fig:cnn}). The extracted feature vector then feeds into a standard FCNN to perform inference or regression tasks.
-The filtering parameters of the convolutional layers are learned during the training process, meaning that CNNs act as
-fully-automated feature engineering systems. The major advantage of the CNN architecture is the models accept nearly
-unprocessed data and learn the useful characteristics needed to make inferences. This permits the models to be
-generalizable to unseen data. However, the CNN approach requires vast amounts of data to properly train the models and
-avoid overfitting, because deep network architecture can have millions of free parameters \citep{Ross2018a}. Due to
-their ability to extract features from raw data, CNNs have been used successfully in seismology to: for example, (1)
-detect and locate earthquakes in the central United States \citep{Perol2018}, (2) determine P-wave arrival times and
-first-motion polarity \citep{Ross2018a}, (3) perform generalized phase detection of P- and S-waves \citep{Ross2018b,
-Zhu2019a}, and (4) de-noise seismic recordings \cite{Zhu2019b}, amongst other applications (e.g., \citet{RouetLeduc2017,
-RouetLeduc2019}). CNNs can be used to make many other inferences assuming sufficient training data exists with the
-appropriate labels.
+\ref{fig:cnn}). The extracted feature vector then feeds into a standard FCNN to perform classification or regression
+tasks. The filtering parameters of the convolutional layers are learned during the training process, meaning that CNNs
+act as fully-automated feature extraction systems. The major advantage of CNNs is they accept nearly unprocessed data
+and learn the useful characteristics needed to make inferences. This permits the models to generalize well to unseen
+data and perform in an operational context. However, CNNs require vast amounts of data to properly train, because
+they can have millions of free parameters \citep{Ross2018a}. Due to their ability to extract features from raw data,
+CNNs have been used successfully in seismic event processing to: (1) detect and locate earthquakes in the central United
+States \citep{Perol2018}, (2) determine P-wave arrival times and first-motion polarity \citep{Ross2018a}, (3) perform
+generalized phase detection of P- and S-waves \citep{Ross2018b, Zhu2019a}, and (4) de-noise seismic recordings
+\citep{Zhu2019b}, and other interesting applications (e.g., \citet{RouetLeduc2017, RouetLeduc2019}). CNNs can be trained
+to make many other inferences assuming sufficient training data exists with the appropriate labels.
 
 \begin{figure}[!htb]
   \center\includegraphics[width=\textwidth]{figures/cnn_architecture_ross2018a.png}
   \caption{\label{fig:cnn} From \cite{Ross2018b}: Cartoon depicting CNN used for generalized phase detection. The illustration shows input waveforms undergoing a series of convolution and downsampling operations to extract usable features and the coupling of the CNN and the FCNN.}
 \end{figure}
 
-In seismology, we have the fortune of high-quality labeled datasets continuously updated and expanded through the expert review of professional seismic data analysts. The canonical form of this data can be accessed through the USGS Preliminary Determination of Epicenters (PDE) bulletin, which contains the human-reviewed events, their associated picks and metadata. Each pick of an event in the PDE contains phase information, station-event distances, station-event azimuths, event depths, magnitudes, and source type (e.g., explosion, earthquake, etc.). Therefore it is straightforward to extend the CNN architecture proposed by \citet{Ross2018b} for Generalized Phase Detection (GPD) to classify properties of picks that can be used to help constrain the association problem and potentially make inferences on the magnitude and source type of recorded events.
+In seismology, we have the fortune of high-quality labeled datasets continuously updated and expanded through the
+expert review of professional seismic data analysts. The canonical form of this data can be accessed through the USGS
+Preliminary Determination of Epicenters (PDE) bulletin, which contains human-reviewed events, their associated
+picks and metadata. Each pick of an event in the PDE contains phase information, station-event distances, station-event
+azimuths, event depths, magnitudes, and source type (e.g., explosion, earthquake, etc.). Therefore it is
+straightforward to extend the CNN architecture proposed by \citet{Ross2018b} for Generalized Phase Detection (GPD) to
+classify properties of picks that can be used to help constrain the association problem and potentially make inferences
+on the magnitude and source type of recorded events.
 
 \section{Using Machine Learning for Earthquake Detection and Association: Toward an Improved Global Catalog}
+\label{sec:det_ass}
 
-The work proposed here is two-fold: (1) to implement and deploy machine-learning based detectors (e.g.,
+The work proposed here is two-fold: (1) to implement and deploy machine learning based detectors (e.g.,
 \citet{Perol2018} or \citet{Ross2018a}) to supplement currently used methods such as STA/LTA pickers and (2) to
-implement machine-learning algorithms to classify event-station azimuths, event-station distances, and event depths to
-help constrain associations made by GLASS3. As the work proposed here is intended to be operationalized, a significant
+implement machine learning algorithms to classify event-station azimuths, event-station distances, and event depths to
+help constrain associations made by GLASS3. As the work proposed here is intended to be operationalized, an important
 component of the work will involve making rigorous comparisons between these machine learning algorithms and the
 currently used approaches \citep{Patton2016, Yeck2019}. Items (1) and (2) relate naturally resulting in a classification
-framework that utilizes machine-learning for the detection and association of phase picks with the ultimate goal of
+framework that utilizes machine learning for the detection and association of phase picks with the ultimate goal of
 lowering magnitude thresholds and improving completeness globally.
 
-\subsection{Data and Network Architectures}
+\subsection{Data and Network Architectures} \label{sec:arch_data}
 
 The first step is therefore to obtain continuous waveform data associated with each of the events and picks in the PDE
 bulletin and associated labels used for classification. Based on automated picks from the STA/LTA picker we will store
-60 seconds of continuous waveform data centered on the pick time, and associate all relevant labels (i.e., azimuth,
-depth, distance, magnitude, source type, and other relevant information) with the 60 seconds of continuous waveform data. We plan to make this data set available to the public to encourage additional research. Because of the CNN feature
-extraction system, we can apply minimum preprocessing to the three-channel raw seismic data \citep{Ross2018b}.
-Further processing will be necessary depending on the classification task, specifically, adjusting the window length of
-the raw data. Azimuths and depths will be transformed to categorical variables so the inference can be posed as a
-classification problem. Augmentations within data windows will be performed, such as reversing polarizations and
-swapping horizontal components and uniformly shifting the pick time within the window. This results in a larger data set
-to help the model generalize to potentially unseen data.
+continuous waveform data centered on the pick time, and associate all relevant labels (i.e., azimuth, depth, distance,
+magnitude, source type, and other relevant information) with the continuous waveforms. Because of the CNN feature
+extraction system, we apply minimum processing to the three-channel raw seismic data \citep{Ross2018b}. Further
+processing will be necessary depending on the classification task, specifically, adjusting the window length of the raw
+data. Azimuths, depths, and distances will be transformed to categorical variables so the inference can be posed as a
+classification problem. Data augmentations will be performed, such as reversing polarizations and swapping horizontal
+components and uniformly shifting the pick time within the window. This results in a larger data set to help the model
+generalize to potentially unseen data. These data should be made available to the public to encourage additional
+research.
 
-The next step is implementing CNNs used to provide constraints to the association problem, as this will likely be a
-necessary prerequisite to deal with the increased pick volume resulting from a CNN picker (e.g., \citep{Perol2018}).
-Furthermore, a GPD algorithm can be applied directly as a detector, because the model is trained to distinguish between
-P-waves, S-waves and noise. The azimuth, depth, and distance classifiers will map raw waveform data associated with STA/
-LTA picks into finite depth, azimuth, or distance bins. The classification accuracy might not match the performance of
-phase-classification as the features associated with these new labels are presumably more ambiguous across the data
-set. As a test to increase model performance, we could follow the approach of \citet{Zhu2019b} to compute spectrograms
-to use as input data to the CNN. Including frequency information, in addition to temporal information, provides more
-data for the CNN feature extraction system to leverage. However, the additional computational cost of computing
-spectrograms will need to be weighed against its usefulness.
+The next step is implementing CNNs used to provide constraints to the association problem, as this will be a
+necessary prerequisite to deal with the increased pick volume resulting from a CNN picker (e.g., \citep{Perol2018}). The
+azimuth, depth, and distance classifiers will map raw waveform data into finite depth, azimuth, or distance bins. The
+classification accuracy might not match the performance of GPD as the features associated with these new labels are
+presumably more ambiguous across the data set. If this proves to be true, we can try to increase model performance by
+following the approach of \citet{Zhu2019b} to compute spectrograms to use as input data to the CNN. Including frequency
+information, in addition to temporal information, provides more data for the CNN feature extraction system to leverage.
+However, any additional computational cost of computing spectrograms will need to be weighed against its usefulness.
 
 For the classification tasks proposed here, we will implement the architecture and training procedure following
-\citet{Ross2018b}. The network will initially consist of four convolutional layers and two fully connected layers using
-rectified  linear units as activation functions. Batch normalization will be applied to each layer. An important step in
-training the CNNs will be determining the appropriate hyperparameters to use for the model. Hyper-parameter adjustments
-are typically made using a trial-and-error approach and confirming results based on cross-validation of model
-predictions with testing data. Data will be divided into testing and training sets using 75\% and 25\% of the data
-respectively. \citet{Ross2018b} mention that they experimented with multiple network architectures and generally found
-similar performance amongst architectures. Therefore, it seems sensible to use the CNN architecture proposed in their
-work.
+\citet{Ross2018b}. The authors mention that they experimented with multiple network architectures and generally
+found similar performance amongst them. Therefore, it is sensible to use their proposed CNN architecture. To
+summarize, the network will initially consist of four convolutional layers and two fully connected layers using
+rectified linear units as activation functions, which allow the networks to learn complex mapping between inputs and
+outputs. An important step in training the CNNs will be determining the appropriate hyper-parameters to use for the
+model. Hyper-parameter adjustments are typically made using a trial-and-error approach and confirming results based on
+cross-validation of model predictions with testing data. For cross-validation, data will be divided into training and
+testing sets using 75\% and 25\% of the data respectively.
 
-\subsection{Evaluating Network Performance}
+\subsection{Evaluating Network Performance} \label{sec:net_perf}
 
 Model performance will be assessed using the standard approaches for evaluating classification algorithms. Since CNNs
-output classification probabilities some arbitrary threshold must be set to indicate a classification. As such, the
-probability values associated with the classification threshold will need to be calibrated appropriately. We can assess
-the model performance by comparing precision and recall curves for different probability thresholds. Admittedly, most
-choices of classification thresholds are largely arbitrary. Additionally the F$_1$ score (harmonic mean of precision and
-recall) can be used as a synoptic view of model performance at a given probability threshold.
+output classification probabilities, some arbitrary probability threshold value must be set to assign classification. As
+such, the probability values associated with the classification threshold will need to be calibrated appropriately. We
+can assess the model performance by comparing precision and recall curves for different probability thresholds.
+Admittedly, most choices of classification thresholds are largely arbitrary. Additionally, the F$_1$ score (harmonic
+mean of precision and recall) can be used as a synoptic view of model performance at a given probability threshold.
 
 The performance metrics are used to understand whether predictions made by the network are supported by the validation
 data set. Many of the design choices of deep network architectures come from heuristics and trial-and-error approaches,
 so it is feasible some of the initial network architecture choices may change. If the models show unsatisfactory
-performance, we will iteratively adjust the model hyperparameters until acceptable classification scores are obtained
-through cross-validation. We anticipate the models will obtain excellent performance on classification tasks based on
-published results in the literature \citep{Perol2018, Ross2018a, Ross2018b, Zhu2019a, Zhu2019b}.
+performance, we will iteratively adjust the model hyper-parameters until acceptable classification scores are obtained
+through cross-validation. However, we anticipate the models will obtain excellent performance on classification tasks based on published results in the literature \citep{Perol2018, Ross2018a, Ross2018b, Zhu2019a, Zhu2019b}.
 
 \subsection{Constraining the Association Problem}
 
@@ -246,108 +254,114 @@ there is no ground truth to the data \citep{Yeck2019}. This effect is mitigated,
 GLASS3 against itself and not another associator. Because constraining the association helps us limit the number of
 nodes that are able to nucleate and associate, we can potentially incorporate higher resolutions in the global
 association web with little added computational cost. We can evaluate the performance of the constrained GLASS3
-locations by the refined locations from teleseismic inversions \citep{Hayes2009, Ekstrom2012} on moderately sized
-earthquakes to ensure hypocenter locations are consistent with centroid locations. By quantifying the improvement over currently implemented methods, we can gain confidence in the algorithms' ability to be incorporated into routine processing of association.
+hypocenters by using refined solutions from teleseismic inversions \citep{Hayes2009, Ekstrom2012} for moderately sized
+earthquakes to ensure hypocenters are consistent with centroid locations. Quantifying the improvement over
+currently implemented methods helps us to gain confidence in the algorithms' ability to be incorporated into routine
+event processing.
 
 \subsection{Earthquake Detectors based on Deep Learning}
 
-Next, I propose to evaluate a CNN trained to detect seismic signals in continuous seismic data. Based on results from
-\citet{Perol2018} and \citet{Ross2018b} we can expect potentially an order of magnitude more detected events assuming
-the regional and local results transfer to the global network. There are two possible ways to implement this CNN picker.
-First, we could follow the GPD approach from \citet{Ross2018b}, which would directly transfer from the work classifying
-picks. Or a more advanced network architecture using sequence-to-sequence learning that combines convolution layers with
-long-short-term memory (LSTM) layers (CNN+LSTM) \citep{Mousavi2019}. For consistency with the previous work, it's
-sensible to follow the network architecture implementation and training strategy proposed for the classification
-framework. While more advanced networks like the CNN+LSTM model might improve detection over a standard CNN approach,
-those improvements are left for future work.
+The next step is to evaluate CNNs trained to detect seismic signals in continuous seismic data. Based on results from
+\citet{Perol2018} and \citet{Ross2018b} we can potentially expect an order of magnitude more detected events, assuming
+the regional and local results transfer to the global network. There are two possible ways to implement this CNN-based
+picker. First, we could follow the GPD approach from \citet{Ross2018b}, or a more advanced network architecture using
+sequence-to-sequence learning that combines convolution layers with long-short-term memory (LSTM) layers (CNN+LSTM)
+\citep{Mousavi2019}. For consistency with the previous work, I plan to follow the network architecture implementation
+and training strategy outlined in Section \ref{sec:arch_data}.
 
-Phase-picks determined from the CNN picker will be fed into the classification framework developed to improve GLASS3
-associations. As before, picks and their associated metadata will be used by the GLASS3 association algorithm to
-determine probable hypocenter locations. As a natural extension from the previous work, the picks will now contain phase
-information in addition to distance, depth, and azimuth. This information will help to further constrain the association
-when smaller signals are detected as earthquakes. A similar verification will be performed except now we must (1)
-compare unconstrained GLASS3 with STA/LTA picks with unconstrained GLASS3 with CNN picks, and (2) compare the
-constrained GLASS3 outputs with STA/LTA picks and constrained GLASS3 outputs with CNN picks following \citet{Yeck2019}.
-It will be interesting to determine the changes in magnitude of completeness and detection threshold when using CNNs for
-both picking and constraining association. We expect the best association performance (and global catalog
-quality) comes from using a CNN picker and constraining GLASS3. Therefore, introducing a CNN picker and classification
-framework for the association problem has the potential to drastically improve current global monitoring capabilities at
-the NEIC.
+Picks identified by the CNN picker will be fed into the classification framework developed to improve GLASS3
+associations. The CNN picks will now contain phase information in addition to distance, depth, and azimuth. This
+information will help to further constrain the association when weaker signals are detected. As a natural extension from
+the previous work, a similar verification will be performed except now we must (1) compare unconstrained GLASS3 with
+STA/LTA picks with unconstrained GLASS3 with CNN picks, and (2) compare the constrained GLASS3 outputs with STA/LTA
+picks and constrained GLASS3 outputs with CNN picks following \citet{Yeck2019}. Rigorous verification of association is
+required, because the CNN picker could find events not listed in the PDE. Therefore, false association rates for GLASS3
+can be artificially increased \citep{Yeck2019}. It will be useful to determine the changes in magnitude of completeness
+and detection threshold when using CNNs for both picking and constraining association. We expect to obtain the best
+association performance (and global catalog quality) when using a CNN picker and constraining GLASS3. As such,
+introducing a CNN picker and classification framework for detection and association has the potential to significantly
+improve global monitoring capabilities at the NEIC.
 
 \section{Inferring Magnitudes and Source Types from Single Station Records}
 
-Using data labels readily available in the PDE bulletin, I propose to explore the feasibility of machine learning
-algorithms to (1) rapidly characterize earthquake magnitudes ($m_b$) and (2) source types from single station records.
-Much of the network architecture, data aggregation and processing developed in the previous section will be directly
-transferable here making this a natural extension of the previous work. Thus, I anticipate to use the same network
-architecture and data set but trained to classify the appropriate labels (e.g., $m_b$ or source type). The goal of this
-application is to produce rapid estimate of magnitude from a single station without a predetermined hypocenter location.
-This application of deep learning for rapid magnitude determination has direct implications for earthquake early warning.
+To explore novel applications of machine learning for rapid source characterization, I propose to investigate the
+feasibility of machine learning algorithms to (1) rapidly characterize earthquake magnitudes and (2) source types from
+single station records. Much of the network architecture, data aggregation and processing developed in Section
+\ref{sec:det_ass} will be directly transferable here making this a natural extension of the previous work. Thus, I
+anticipate to use the same network architecture and data sets, but trained to classify the appropriate labels (i.e.,
+$M_w$ or source type). The goal of this research is to produce rapid estimations of source characteristics from a
+single station without a predetermined hypocenter location. This application of deep learning for rapid magnitude
+determination has direct implications for earthquake early warning.
 
 \subsection{Data and Network Architecture}
 Much like making inferences about the azimuth, depth, and distance based on an observation at a single station we can
 train a neural network to infer the magnitude or source type from a single station record. There are two ways we can
-approach the magnitude problem. First, we can treat the magnitude as a continuous value and configure a regression
-problem, which requires a minor modification to the previously proposed architecture of the neural network. Secondly, we
-can treat it as a classification problem using discrete magnitude bins. We will generate data sets containing both
-labels to explore both approaches. An additional consideration for the magnitude estimate is whether to use the event
-magnitude or the magnitude based on the seismometer recording. For early warning applications, it makes the most sense
-to estimate the event magnitude using stations closest to the hypocenter. This way the magnitude determination is
-fastest and the signal will be least impacted by attenuation and path effects. Generating the data set for classifying
-source type is straight-forward in that we are going to use three labels (1) earthquake, (2) explosion, (3) unknown and
-ensure that the training data set is equally distributed between the labels.
+approach the magnitude problem. First, we can treat the magnitude as continuous value and formulate the problem as a
+regression task, which requires a minor modification to the previously proposed architecture of the neural network
+(i.e., \citet{Ross2018a, Ross2018b}). Secondly, we can view it as a classification problem using discrete magnitude
+bins. Therefore, we will generate data sets from the PDE containing both labels to explore both approaches. An
+additional consideration for the magnitude estimate is whether to use the event magnitude or the magnitude based on the
+seismometer recording. For early warning applications, it makes sense to estimate the event magnitude based on stations
+closest to the hypocenter. Thus, the magnitude determination will be reported quickly and the signal will be least
+impacted by path effects. The data set for classifying source-types involve assigning three labels (1) earthquake, (2)
+explosion, (3) unknown source type.
 
-\subsection{Inferring Body-wave Magnitude}
+\subsection{Inferring Magnitudes and Source Types}
 Body wave magnitudes are computed based on the maximum amplitude of the first 5 seconds of short period P-waves at a
-station and term correcting for distance and depth from the source \citep{Gutenberg1945, Scordillis2006}. Therefore, a
-hypocenter determination must be made in order to properly compute the correction term. It will be important to
-understand the predictions of the model as a function of reported magnitude. We can compare this by making bias plots
-and quantifying both the bias and scatter between magnitude scales. Also, it is well known that magnitude distributions
-follow a power law distribution as a function of size, therefore our data set will skewed towards lower magnitudes. This
-effect is important for magnitude estimation as the amplitude of the seismic signal is likely the primary feature
-controlling the magnitude estimate, and we have the least observations for the most damaging earthquakes. In addition to
-inferring magnitudes of larger events, we should assess the ability of the CNN to determine the magnitude of smaller
-events as this has important implications for earthquake forecasting and seismic hazard where smaller magnitude
-earthquakes are used to forecast the locations of larger earthquakes yet to occur \citep{Werner2011}. This approach
-likely has better applications to regional and local networks where first arriving phases are recorded in denser
-networks.
+station with a correction for distance from the source \citep{Gutenberg1945, Scordillis2006}. Therefore, a hypocenter
+determination must be made in order to properly compute the correction term. Thus, being able to estimate magnitudes
+without a known hypocenter will result in more timely magnitude estimations, but we need to assess the reliability of
+CNN based magnitude estimates.
 
-\subsection{Inferring Source Type}
-We can treat the source type inference as a simple classification problem where we define the labels: earthquake,
-explosion, and unknown. We hypothesize that the onset of energy from an earthquake will differ from that of an explosive
-source \cite{Evernden1969, Douglas2002}, therefore we anticipate that the CNN will be able to capture the features
-necessary to distinguish between source types in this simple classification study. For this case, we will use waveform
-data and records processed into spectrograms following \citet{Zhu2019b} as the frequency content of the arriving waves
-should be different for tectonic and explosive sources \citep{Evernden1969}. It will be interesting to understand under what conditions the model fails to make predictions as this would indicate some ambiguity between the explosive and tectonic signals. We can investigate this by plotting the failed, and successful, predictions in the context of other features of the seismic energy for example, depth, distance, and magnitude.
+It is well known that magnitude distributions follow a power law as a function of magnitude, so our data set
+will be biased towards lower magnitudes. This effect is important as the amplitude of the seismic signal is likely the
+primary feature controlling the magnitude estimate. In addition to an emphasis on larger global events, we should assess
+the accuracy of the CNN to determine the magnitude of smaller events as this has important implications for earthquake
+forecasting and seismic hazard where smaller magnitude earthquakes are used to forecast the locations of larger
+earthquakes yet to occur \citep{Werner2011}. Therefore, it is important to understand the predictions of the model
+as a function of authoritative magnitude and to quantify the biases of the magnitude estimation with respect
+to other accepted magnitude estimates, toward minimizing the bias between different magnitude
+scales \citep{Scordillis2006}.
+
+The source type inference represents a simple classification problem with labels: earthquake, explosion, and unknown
+source type. The onset of energy from an earthquake should differ from that of an explosive source \citep{Evernden1969,
+Douglas2002}, therefore we anticipate that the CNN will be able to capture the features necessary to distinguish between
+source types. For this case, we will use waveform data and records processed into spectrograms following
+\citet{Zhu2019b} as the frequency content of the arriving waves should be different for tectonic and explosive sources
+\citep{Evernden1969}. We will iterate on network architecture and hyper-parameters using the scores outlined in Section
+\ref{sec:net_perf} to maximize our classification accuracy. It will be interesting to understand under what conditions
+the model fails to make predictions as this indicates ambiguity between the explosive and tectonic signals. We can
+address this by plotting the predictions in the context of other features of the signal such as, depth, distance, and
+magnitude. Rapidly classifying the source types has implications for explosion monitoring and the downstream processing
+of event records.
 
 \section{Summary and Future Impacts}
-This proposal contains both research and operational components focused on incorporating machine-learning algorithms to
+This proposal contains both research and operational components focused on incorporating machine learning algorithms to
 improve global earthquake monitoring at the NEIC. The proposed classification framework complements current work being
 at the NEIC and provides a natural extension for improvements to the GLASS3 association algorithm \citep{Yeck2019}. A
 major goal of this work involves incorporating these algorithms into the routine processing of global seismic data. The
-foundation of all source products (e.g., moment magnitude, moment tensor, slip model) depends on quick and accurate
-hypocenter locations, therefore advances made to earthquake detection and association have the potential improve all
-related source products.
+foundation of all earthquake response products (e.g., moment magnitude, moment tensor, slip models) depends on quick and
+accurate hypocenter locations, therefore advances made to earthquake detection and association have the potential
+improve earthquake response from the NEIC as a whole.
 
-This work focuses on the global network but future work would be to apply these techniques to regional and local
+This work focuses on the global case, but future work would be to apply these techniques to regional and local
 association webs to understand the effects on improving monitoring capabilities domestically and during aftershock
-sequences. A natural evaluation of this work would be to use machine learning algorithms to help develop additional
-source products such as moment tensors (e.g., \citet{Ross2018a}) and facilitate efforts for earthquake early warning
-(EEW). Due to their ability to extract features from raw data, it remains conceivable that seismic waveform data could
-be used to predict quantities useful for EEW, such as PGV, PGA, or magnitudes assuming that ideas of weak determinism
-hold \citep{Goldberg2018}. While this is outside the scope of work presented here, this would be an interesting avenue
-for future applications of machine-learning. Thus, the expected outcomes from this proposal have the capacity to
-drastically improve operational capabilities at the NEIC well into the future.
+sequences. A natural extension of this work would be to use machine learning algorithms to rapidly develop additional
+source products such as moment tensors (e.g., \citet{Ross2018a}) and facilitate additional efforts for earthquake early
+warning (EEW). Due to their ability to extract features from raw data, it is conceivable that seismic waveform data
+could be used to predict quantities useful for EEW, such as peak ground metrics or spectral accelerations assuming that ideas of
+weak determinism hold \citep{Goldberg2018}. While this is outside the scope of work presented here, this would be an
+interesting avenue for future applications of machine learning. Thus, the proposed work can drastically improve
+operational capabilities at the NEIC, and would lay the foundation for future research using machine learning.
 
 \section{Links to USGS Science Program Strategy}
 The proposed work is motivated by the USGS Science Strategy \citep{Holmes2013} and the NEIC Strategic Plan \citep{Hayes2019sp} to:
 
 \begin{enumerate}
   \item \emph{``Take advantage of rapidly changing technology, recognizing that the ability to monitor effectively
-  depends on the technology used and the ability to adapt to changes."} - Advancements in machine-learning provide
+  depends on the technology used and the ability to adapt to changes."} - Advancements in machine learning provide
   automated tools that have been shown to replicate the performance of humans in complex classification tasks. Applying
-  these toward seismic monitoring will improve our ability to detect earthquakes and strengthen our earthquake response
-  products.
+  these toward seismic monitoring could revolutionize our ability to detect earthquakes and improve our understanding of the earthquake process.
 
   \item \emph{``Evaluate warning and response products to improve their accuracy, timeliness, and communication, and
   demonstrate the value of the USGS hazard investment in observations and fundamental understanding."} - Accurate and
@@ -356,47 +370,53 @@ The proposed work is motivated by the USGS Science Strategy \citep{Holmes2013} a
 
   \item \emph{``Promote targeted research on physical hazard initiation processes, because limited understanding about
   these processes limits the ability to make accurate predictions."} - Our ability to observe seismicity in the earth is
-  limited by the amount of stations we provide and our ability to process the recorded data. Machine-learning approaches
-  to earthquake monitoring have the capability to encourage new research on process before earthquakes. For example,
+  limited by the amount of stations we provide and our ability to process the recorded data. machine learning approaches
+  to earthquake monitoring have the capability to inform us about processes occurring before earthquakes. For example,
   \citet{Trugman2019} discovered pervasive foreshock activity in southern California using catalogs enhanced by
-  machine-learning.
+  machine learning.
 
-  \item \emph{``Use machine-learning to improve monitoring operations at the NEIC"} - The proposed work has obvious
+  \item \emph{``Use machine learning to improve monitoring operations at the NEIC"} - The proposed work has obvious
   implications for improving monitoring operations at the NEIC and will provide a framework to allow for additional
-  machine-learning based approaches to be incorporated in the future.
+  machine learning based approaches to be incorporated in the future.
 \end{enumerate}
 
 \section{Candidate Experience}
 
-My PhD in the joint-doctoral program between San Diego State and Scripps Institution of Oceanography (SIO) focused
-largely on improving our capability to generate high frequency ($\sim$10 Hz) strong-ground motion synthetics. The work
-utilized stochastic models to account for the small-scale variability in both the source and media allowing for
-wave-field simulations consistent with observations \citep{Savran2016, Savran2019}. This work provided me with a strong
-foundation for working with large data sets on high-performance computing systems (>10 terabytes).
+My PhD in the joint-doctoral program between San Diego State University and Scripps Institution of Oceanography (SIO)
+focused on improving our capability to generate deterministic high frequency ($\sim$10 Hz) strong-ground motion
+synthetics. My work utilized stochastic models to account for the small-scale variability in both the source and media
+allowing for wave-field simulations consistent with observations \citep{Savran2016, Savran2017, Savran2019}. This work
+provided me with a fundamental understanding of seismology and a strong foundation for working with large data sets on
+high-performance computing systems ($>$10 terabytes).
 
-My current work as a Research Programmer at the Southern California Earthquake Center (SCEC) focuses on developing
-validation metrics for earthquake forecasts that produce synthetic earthquake catalogs and implementing them into a
-toolbox to share with the community (in development). This work is done as part of the international collaboration
-called the \emph{Collaboratory for the Study of Earthquake Predictability} \citep{Jordan2006, Schorlemmer2007b}. The
-computational and statistical background I developed, along with helpful research advisors, allowed me to make
-contributions to this project that will be used to evaluate operational forecasts in the European RISE project for
-dynamic seismic hazard assessment. These methods will be published in the BSSA Ridgecrest special issue
-\citep{Savran2020}. To support research outreach, I mentored undergraduate interns at SCEC focusing on machine learning where we worked with the software tools (e.g., TensorFlow) necessary to implement deep learning algorithms.
+My current work at the Southern California Earthquake Center (SCEC) focuses on developing validation metrics for
+earthquake forecasts that produce synthetic earthquake catalogs and implementing them into a toolbox to share with the
+community (in development). This work is done as part of an international collaboration called the \emph{Collaboratory
+for the Study of Earthquake Predictability} \citep{Jordan2006, Schorlemmer2007b}. The computational and statistical
+background I developed during my PhD, along with helpful research advisors, allowed me to make contributions to this
+project that will be used to evaluate operational forecasts in the European RISE project for dynamic seismic hazard
+assessment. Additionally, they are used to evaluate the USGS Uniform California Earthquake Rupture Forecast Version 3
+with Epidemic Type Aftershock Sequences (UCERF3-ETAS). These methods will be published in the BSSA Ridgecrest special
+issue \citep{Savran2020}. To support research outreach, I mentored undergraduate interns at SCEC, focusing on machine
+learning, where we worked with the software tools (e.g., TensorFlow) used to implement deep learning algorithms.
 
-Working on earthquake forecasting has made me particularly keen on catalog quality and the operational response to large
-earthquakes. I am strongly interested in the applications of machine-learning and contributing to the operational
-capabilities of the NEIC. Both my PhD work and my current role at SCEC puts me in a uniquely qualified position to
-achieve both the operational and research aspects of this proposal - largely in part to my research experience and
-strong computing abilities. In order to achieve the work outlined here, I will build upon previously published work in
-the field and leverage the experience of the research advisors of this Mendenhall opportunity.
+My previous work has made me particularly keen on improving catalog quality and the operational response to large
+earthquakes. I am strongly interested in the applications of machine learning in this area and contributing to the
+operational capabilities of the NEIC. Both my PhD work and my current role at SCEC puts me in a uniquely qualified
+position to achieve both the operational and research aspects of this proposal - largely in part to my research
+experience and strong computing abilities. In order to achieve the work outlined here, I will build upon previously
+published work in the field and leverage the experience of the research advisors for this Mendenhall opportunity.
 
-\section{Required Scientific Facilities}
-The proposed work requires access to facilities with GPU accelerated computing to train the deep neural-networks.
-\citet{Ross2018b} required three NVIDIA GTX1060 graphics cards for their training needs. Both the USGS Yeti
-Supercomputing cluster and the USGS Tallgrass cluster provide GPU computing that should be sufficient to complete the
-proposed work. Additionally, the NEIC has an in-house server containing two Tesla V100 GPUs.
+\section{Required Scientific Facilities} The proposed work requires access to facilities with GPU accelerated computing
+to train the deep neural-networks. \citet{Ross2018b} required three NVIDIA GTX1060 graphics cards for their training
+needs. Both the USGS Yeti cluster and the USGS Tallgrass cluster provide GPU computing that should be sufficient to
+complete the proposed work. Additionally, the NEIC has an in-house server containing two Tesla V100 GPUs. The data are
+available at no additional cost.
 
-\bibliographystyle{plainnat}
+\newpage
+\AtBeginShipout{%
+\AtBeginShipoutDiscard
+}
+\bibliographystyle{apalike}
 \bibliography{references}
-
 \end{document}
